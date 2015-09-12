@@ -19,17 +19,20 @@ namespace MangaKeeper
         static void Main(string[] args)
         {
             Console.ForegroundColor = ConsoleColor.White;
-            Console.Title = "MangaSammler 2wei";
-            Console.WriteLine("MangaSammler by Rimfaxe");
-            Console.WriteLine("v0.2 (25 Jul 2015)");
+            Console.Title = "Readmanga Downloader";
+            Console.WriteLine("Readmanga Downloader v1.0.1 (12.09.2015)");
+            //Console.WriteLine("");
             Console.WriteLine("");//http://readmanga.me/
-            Url = File.ReadAllText(Environment.CurrentDirectory + @"\input.txt");
+
+            Url = UrlInf();
             TName = Url.Replace("://readmanga.me/", "").Replace("://adultmanga.ru/", "").Replace("https", "").Replace("http", "");
             Console.WriteLine("Ввести краткое название (используется при наименовании папок с главами)");
+            Console.WriteLine("Нажмите Enter, чтобы использовать название "+TName);
             Console.Write(">: ");
-            TName = Console.ReadLine().Replace(" ","_");
+            string temp_name = Console.ReadLine().Replace(" ","_");
+            if (temp_name.Length > 1) TName = temp_name;
             string dirname = TName;
-            if (dirname.Length < 1) dirname = "namenlos";
+           // if (dirname.Length < 1) dirname = "namenlos";
             TPath = Environment.CurrentDirectory + @"\" + dirname;
             try
             {
@@ -43,8 +46,9 @@ namespace MangaKeeper
             //WebResponse resp = req.GetResponse();
             if (Url.Contains("readmanga")) MServer = "http://readmanga.me";
             if (Url.Contains("adultmanga")) MServer = "http://adultmanga.ru";
+            string mature = "?mature=1";
             WebClient Client = new WebClient();
-            Stream stream = Client.OpenRead(Url + "/vol1/1");
+            Stream stream = Client.OpenRead(Url + "/vol1/1"+ mature);
             StreamReader sr = new StreamReader(stream);
             inhtml = sr.ReadToEnd();
             sr.Close();
@@ -57,8 +61,52 @@ namespace MangaKeeper
                 match = match.NextMatch();
             }
 
-
+            Console.WriteLine("Загрузка завершена. Чтобы выйти из программы, нажмите любую клавишу.");
             Console.ReadLine();
+        }
+        public static string UrlInf()
+        {
+            //string urlinf = "";
+            
+            string tmpx = "";
+            while (true)
+            {
+                try
+                {
+                    tmpx = File.ReadAllText(Environment.CurrentDirectory + @"\input.txt");
+                    if (!tmpx.Contains("://readmanga.me/") && !tmpx.Contains("://adultmanga.ru/"))
+                    {
+                        Console.WriteLine("Файл input.txt содержит некорректную ссылку. Пожалуйста, исправьте её и попробуйте снова.");
+                        Console.WriteLine("Enter для продолжения...");
+                        Console.ReadLine();
+                        continue;
+                    }
+                    Console.WriteLine("Секундочку... Проверяем ссылку на корректность.");
+                    WebRequest req = WebRequest.Create(tmpx);
+                    WebResponse resp = req.GetResponse();
+                    Stream stream = resp.GetResponseStream();
+                    StreamReader sr = new StreamReader(stream);
+                    string oout = sr.ReadToEnd();
+                    sr.Close();
+                    if (oout.Contains("<title>Page not found - ReadManga.me</title>")||oout.Contains("<title>Page not found - AdultManga.ru</title>"))
+                    {
+                        Console.WriteLine("Файл input.txt содержит некорректную ссылку (ошибка 404). Пожалуйста, исправьте её и попробуйте снова.");
+                        Console.WriteLine("Enter для продолжения...");
+                        continue;
+                    }
+                    break;
+                }
+                catch
+                {
+                    System.IO.StreamWriter writer = new System.IO.StreamWriter(Environment.CurrentDirectory + @"\input.txt" , true);
+                    writer.WriteLine(" ");
+                    writer.Close();
+                    Console.WriteLine("Создан файл input.txt; Пожалуйста, разместите в нём ссылку на скачиваемую мангу");
+                    Console.WriteLine("Enter для продолжения...");
+                    Console.ReadLine();
+                }
+            }
+            return tmpx;
         }
         public static string Volume(string input)
         {
